@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Typing Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .correct { color: green; }
+        .incorrect { color: red; text-decoration: underline; }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-6 transition duration-500">
+
+    <div class="bg-white shadow-xl rounded-lg p-6 max-w-3xl w-full text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Ultimate Typing Master</h2>
+        <p class="text-gray-600 mb-4">Improve your typing speed and accuracy with real-time tracking.</p>
+
+        <!-- Typing Content -->
+        <div id="textContainer" class="bg-gray-200 p-4 rounded-md text-lg text-gray-800 leading-relaxed">
+            Click "Start Typing" to begin.
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mt-4 w-full bg-gray-300 rounded-full">
+            <div id="progressBar" class="h-2 bg-blue-500 rounded-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+
+        <!-- Input Field -->
+        <textarea id="typingInput" 
+                  class="w-full h-32 p-4 border border-gray-300 rounded-lg mt-4 text-lg resize-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Start typing here..." disabled oninput="checkTyping()" onpaste="return false;"></textarea>
+
+        <!-- Timer & Score -->
+        <div class="flex justify-between text-gray-700 mt-4">
+            <p>Time Left: <span id="timeLeft">60</span>s</p>
+            <p>WPM: <span id="wpmCount">0</span></p>
+            <p>Accuracy: <span id="accuracyCount">100</span>%</p>
+        </div>
+
+        <!-- High Score Display (Leaderboard) -->
+        <div class="mt-2 text-gray-700">
+            <p>🏆 Best WPM: <span id="bestWPM">0</span></p>
+            <p>🔥 Best Accuracy: <span id="bestAccuracy">0</span>%</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="mt-5 flex gap-4 justify-center">
+            <button onclick="startTyping()" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                Start Typing
+            </button>
+            <button onclick="restartTest()" 
+                    class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                Restart
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="mt-6 text-center text-gray-700">
+        Developed by <a href="https://www.facebook.com/saifuldevs/" target="_blank" class="text-blue-600 hover:underline">Saiful</a>
+    </footer>
+
+    <script>
+        const paragraphs = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Typing fast requires both speed and accuracy.",
+            "Consistency in practice makes a great typist.",
+            "A smooth typing flow increases productivity.",
+            "Focus on proper finger placement for efficiency.",
+            "Good posture improves typing performance.",
+            "Practice daily to see improvements in WPM.",
+            "Typing tests help track your progress over time.",
+            "Accuracy should be prioritized over speed.",
+            "Fast typists use all ten fingers effectively.",
+            "A comfortable keyboard setup enhances performance.",
+            "Mastering the keyboard layout improves efficiency.",
+            "Typing without looking is called touch typing.",
+            "Repetitive practice strengthens muscle memory.",
+            "Professional typists achieve speeds above 80 WPM.",
+            "Typing competitions challenge speed and precision.",
+            "Using shortcuts can improve overall efficiency.",
+            "A relaxed wrist position prevents strain.",
+            "Typing software can assist in skill development.",
+            "Typing rhythm helps maintain steady speed."
+        ];
+
+        let timer, timeLeft = 60, isTyping = false, wordCount = 0, correctWords = 0;
+        let originalText = "";
+        let wordsArray = [];
+        let sentenceCompleted = true; // Now set to TRUE initially to allow first start
+
+        function startTyping() {
+            if (!sentenceCompleted) {
+                return; // Prevent new sentence from loading until previous one is completed
+            }
+            sentenceCompleted = false; // Reset completion state
+
+            loadNewSentence();
+
+            document.getElementById("typingInput").value = "";
+            document.getElementById("typingInput").disabled = false;
+            document.getElementById("typingInput").focus();
+            wordCount = correctWords = 0;
+            timeLeft = 60;
+            document.getElementById("timeLeft").textContent = timeLeft;
+            document.getElementById("wpmCount").textContent = 0;
+            document.getElementById("accuracyCount").textContent = "100";
+
+            if (!isTyping) {
+                isTyping = true;
+                timer = setInterval(updateTimer, 1000);
+            }
+        }
+
+        function loadNewSentence() {
+            originalText = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+            wordsArray = originalText.split(" ");
+            document.getElementById("textContainer").innerHTML = wordsArray.map(word => `<span>${word}</span>`).join(" ");
+        }
+
+        function updateTimer() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                document.getElementById("timeLeft").textContent = timeLeft;
+                document.getElementById("progressBar").style.width = `${(60 - timeLeft) / 60 * 100}%`;
+            } else {
+                clearInterval(timer);
+                timer = null;
+                isTyping = false;
+                document.getElementById("typingInput").disabled = true;
+                saveHighScores();
+            }
+        }
+
+        function checkTyping() {
+            let typedText = document.getElementById("typingInput").value.trim();
+            let typedWords = typedText.split(/\s+/);
+
+            let spans = document.querySelectorAll("#textContainer span");
+            correctWords = 0;
+
+            spans.forEach((span, index) => {
+                if (typedWords[index] === wordsArray[index]) {
+                    span.classList.add("correct");
+                    span.classList.remove("incorrect");
+                    correctWords++;
+                } else if (typedWords[index]) {
+                    span.classList.add("incorrect");
+                    span.classList.remove("correct");
+                } else {
+                    span.classList.remove("correct", "incorrect");
+                }
+            });
+
+            if (typedText.trim() === originalText) {
+                sentenceCompleted = true; // Allow the user to load a new sentence
+            }
+
+            let wpm = (correctWords / ((60 - timeLeft) / 60)) || 0;
+            let accuracy = (correctWords / typedWords.length) * 100 || 100;
+
+            document.getElementById("wpmCount").textContent = Math.round(wpm);
+            document.getElementById("accuracyCount").textContent = Math.round(accuracy);
+        }
+
+        function restartTest() {
+            clearInterval(timer);
+            timer = null;
+            isTyping = false;
+            sentenceCompleted = true; // Ensure restart works correctly
+            document.getElementById("textContainer").textContent = "Click 'Start Typing' to begin.";
+            document.getElementById("typingInput").value = "";
+            document.getElementById("typingInput").disabled = true;
+            document.getElementById("timeLeft").textContent = "60";
+            document.getElementById("wpmCount").textContent = "0";
+            document.getElementById("accuracyCount").textContent = "100";
+            document.getElementById("progressBar").style.width = "0%";
+        }
+    </script>
+
+</body>
+</html>
